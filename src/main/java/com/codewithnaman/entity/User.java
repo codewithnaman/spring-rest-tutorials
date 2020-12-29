@@ -1,6 +1,7 @@
 package com.codewithnaman.entity;
 
 import com.codewithnaman.entity.embeddable.RecordMetadata;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -28,6 +29,7 @@ public class User {
     @Embedded
     private RecordMetadata metadata;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user",fetch = FetchType.LAZY)
     private List<Todo> tasks;
 }

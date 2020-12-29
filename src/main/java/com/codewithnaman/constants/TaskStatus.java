@@ -1,5 +1,5 @@
 package com.codewithnaman.constants;
 
 public enum TaskStatus {
-    NEW,IN_PROGRESS,COMPLETED
+    NEW,PENDING,IN_PROGRESS,COMPLETED
 }

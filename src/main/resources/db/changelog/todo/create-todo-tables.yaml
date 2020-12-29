@@ -31,8 +31,6 @@ databaseChangeLog:
                   name: task_name
                   type: VARCHAR(255)
               - column:
-                  constraints:
-                    nullable: false
                   name: task_description
                   type: VARCHAR(1024)
               - column:

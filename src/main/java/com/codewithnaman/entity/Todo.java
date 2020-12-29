@@ -2,6 +2,7 @@ package com.codewithnaman.entity;
 
 import com.codewithnaman.constants.TaskStatus;
 import com.codewithnaman.entity.embeddable.RecordMetadata;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -20,7 +21,7 @@ public class Todo {
     @Column(name = "task_name", nullable = false)
     private String taskName;
 
-    @Column(name = "task_description", nullable = false, length = 1024)
+    @Column(name = "task_description", length = 1024)
     private String taskDescription;
 
     @Enumerated(EnumType.STRING)
@@ -36,6 +37,7 @@ public class Todo {
     @Embedded
     private RecordMetadata metadata;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;

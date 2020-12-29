@@ -628,3 +628,62 @@ Response code: 400; Time: 220ms; Content length: 135 bytes
 ```
 We the HTTP status code as Bad Request, and a nice customized message body which will give better information about error
 occurred while validation request.
+
+After this we have implemented all the resource endpoints for the user and their todo. Let's see endpoint we expose from
+our application:
+
+1. Create User
+```text
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+"userName": "user2",
+"firstName": "user2",
+"lastName": "user2"
+}
+```
+
+2. Retrieve User
+```text
+###
+GET http://localhost:8080/users
+
+GET http://localhost:8080/users/{searchBy}/{idOrUserName}
+```
+
+3. Remove User
+```text
+DELETE http://localhost:8080/users/{idOrUserName}
+```
+
+1. Create User Task
+```text
+POST http://localhost:8080/users/{userId}/tasks
+Content-Type: application/json
+
+{
+  "taskName": "TEST TASK",
+  "taskDescription": "TASK Desp is not found"
+}
+```
+
+2. Retrieve User Task
+```text
+GET http://localhost:8080/users/{userId}/tasks/
+
+GET http://localhost:8080/users/{userId}/tasks/{taskId}
+```
+
+3. Update User Tasks
+```text
+PUT http://localhost:8080/users/1/tasks/2/IN_PROGRESS
+Content-Type: application/json
+```
+
+4. Delete User Task
+```text
+DELETE http://localhost:8080/users/{userId}/tasks/{taskId}
+```
+
+The APIs and concepts; we used this till point we have checked in branch [here]().
