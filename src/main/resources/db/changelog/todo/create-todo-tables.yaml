@@ -1,0 +1,59 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-table-todo
+      author: spring-boot-application
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            tableExists:
+              tableName: todo
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_todo
+                  name: id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    foreignKeyName: fk_todo_user
+                    references: user(id)
+                    nullable: false
+                  name: user_id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: task_name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: task_description
+                  type: VARCHAR(1024)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: status
+                  type: VARCHAR(255)
+              - column:
+                  name: start_time
+                  type: datetime
+              - column:
+                  name: completion_time
+                  type: datetime
+              - column:
+                  constraints:
+                    nullable: false
+                  name: create_date
+                  type: datetime
+              - column:
+                  constraints:
+                    nullable: false
+                  name: update_date
+                  type: datetime
+            tableName: todo

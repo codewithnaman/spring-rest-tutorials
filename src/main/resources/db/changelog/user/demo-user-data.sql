@@ -1,0 +1,2 @@
+INSERT INTO USER(username,first_name,last_name,create_date,update_date) VALUES ('admin','admin','admin', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+INSERT INTO USER(username,first_name,last_name,create_date,update_date) VALUES ('user','user','user', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());

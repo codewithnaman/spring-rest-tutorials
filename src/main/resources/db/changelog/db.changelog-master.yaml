@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/user/create-user-tables.yaml
+  - include:
+      file: db/changelog/todo/create-todo-tables.yaml
+  - include:
+      file: db/changelog/user/demo-user-data.sql
