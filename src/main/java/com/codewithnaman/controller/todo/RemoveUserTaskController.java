@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Slf4j
-public class RemoveUserTask {
+public class RemoveUserTaskController {
 
     private final DeleteUserTaskService deleteUserTaskService;
 
-    public RemoveUserTask(DeleteUserTaskService deleteUserTaskService) {
+    public RemoveUserTaskController(DeleteUserTaskService deleteUserTaskService) {
         this.deleteUserTaskService = deleteUserTaskService;
     }
 

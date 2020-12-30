@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Slf4j
-public class UpdateUserTask {
+public class UpdateUserTaskController {
 
     private final UpdateUserTaskService updateUserTaskService;
 
-    public UpdateUserTask(UpdateUserTaskService updateUserTaskService) {
+    public UpdateUserTaskController(UpdateUserTaskService updateUserTaskService) {
         this.updateUserTaskService = updateUserTaskService;
     }
 

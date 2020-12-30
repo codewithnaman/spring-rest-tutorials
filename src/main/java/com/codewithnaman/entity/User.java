@@ -1,6 +1,7 @@
 package com.codewithnaman.entity;
 
 import com.codewithnaman.entity.embeddable.RecordMetadata;
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
@@ -10,6 +11,7 @@ import java.util.List;
 @Entity
 @Table(name = "user")
 @Data
+@JsonFilter("RecordMetaDataFilter")
 public class User {
 
     @Id

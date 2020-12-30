@@ -60,7 +60,7 @@ access to create todo task and manage their tasks.
 
 Initially we are going to expose the API for the CRUD operations on users and their tasks. Then we will try to write 
 better logic with them with versioning of API, and we will also understand Richardson Maturity model for REST API and
-HATEOS. Let's get started.
+HATEOAS. Let's get started.
 
 ### Database and Spring JPA setup
 We have created liquibase setup for creating the table and inserting demo data into table. You can find the liquibase 
@@ -686,4 +686,388 @@ Content-Type: application/json
 DELETE http://localhost:8080/users/{userId}/tasks/{taskId}
 ```
 
-The APIs and concepts; we used this till point we have checked in branch [here]().
+The APIs and concepts; we used this till point we have checked in branch [here](https://github.com/naman-gupta810/spring-rest-tutorials/tree/intial-developed-rest-apis).
+
+Let's move ahead and integrate the HATEOAS with Our API.
+
+### Integrating HATEOAS with our API
+HATEOAS(Hypermedia As The Engine Of Application State) will tell that we can provide the links associated with a resource
+for further exploration on the web for that particular resource. Let's understand this by our application example.
+
+1. We can provide the link for tasks of user in user resource.
+2. We can provide the user link in task description retrieval API.
+3. We can provide the link of each user in the users list.
+4. We can provide the link of each task in tasks list of user.
+
+We will do for one example; Where we will add user link to task. Let's see code for this below:
+```text
+  @GetMapping("users/{userId}/tasks/{taskId}")
+    public EntityModel<Todo> findAllUserTasks(@PathVariable String userId, @PathVariable Long taskId) throws EntityNotFoundException {
+        log.info("Request Received for User ID : {} and Task ID: {}", userId, taskId);
+        Todo todo = retrieveUserTaskService.findUserTaskByTaskID(userId, taskId);
+        EntityModel<Todo> response = EntityModel.of(todo);
+        response.add(linkTo(methodOn(RetrieveUserController.class).getUser("id",userId)).withRel("user"));
+        log.info("Task found for the User ID : {} and Task ID : {}", userId, taskId);
+        return response;
+    }
+```
+
+Now Let's hit the endpoint and see this. We hit the endpoint `GET http://localhost:8080/users/1/tasks/2` which response
+is:
+```text
+{
+  "id": 2,
+  "taskName": "TEST TASK",
+  "taskDescription": "TASK Desp is not found",
+  "taskStatus": "IN_PROGRESS",
+  "startTime": "2020-12-29T14:22:25.74",
+  "completionTime": null,
+  "metadata": {
+    "createDate": "2020-12-29T14:22:25.212",
+    "updateDate": "2020-12-29T14:22:25.74"
+  },
+  "_links": {
+    "user": {
+      "href": "http://localhost:8080/users/id/1"
+    }
+  }
+}
+```
+So we embedded the link; We have mainly four classes for this.
+* RepresentationModel - This we extend on our response class if we need to add the link to resource itself and put into a 
+  collection.
+* EntityModel - This is used to return a single resource response and add links to it.
+* CollectionModel - This is used when we want to return collection of resources and want to attach the link for collection.
+* PagedModel - This is used when we are using pagination for resources. 
+
+### Advanced REST API Concepts
+#### Content Negotiation
+Right now with every request and response we are using application/json. Just consider the case where we want to consume
+the response in application/xml format. To achieve this with our application, we need to add `jackson-dataformat-xml` 
+library and restart the application. Let's add this to our `pom.xml` and hit the request to get the response as the xml.
+
+**Request :**
+```text
+GET http://localhost:8080/users
+Accept: application/xml
+```
+**Response :**
+```text
+GET http://localhost:8080/users
+
+HTTP/1.1 200 
+Content-Type: application/xml;charset=UTF-8
+Transfer-Encoding: chunked
+Date: Wed, 30 Dec 2020 03:20:52 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
+
+<List>
+    <item>
+        <id>1</id>
+        <userName>admin</userName>
+        <firstName>admin</firstName>
+        <lastName>admin</lastName>
+        <metadata>
+            <createDate>2020-12-30T08:49:46.141</createDate>
+            <updateDate>2020-12-30T08:49:46.141</updateDate>
+        </metadata>
+    </item>
+    <item>
+        <id>2</id>
+        <userName>user</userName>
+        <firstName>user</firstName>
+        <lastName>user</lastName>
+        <metadata>
+            <createDate>2020-12-30T08:49:46.141</createDate>
+            <updateDate>2020-12-30T08:49:46.141</updateDate>
+        </metadata>
+    </item>
+</List>
+
+Response code: 200; Time: 212ms; Content length: 450 bytes
+```
+By adding the library in classpath; Spring configures itself that it can provide and take input in the form of JSON
+and XML. For other formats there are libraries available with jackson; if we want to support those we need to just add
+those libraries in classpath.
+
+For few formats like YAML there is no implicit converter available; in that case we need to create converter class from
+class `AbstractJackson2HttpMessageConverter` and create bean out of it; which will take mapper, and then we can enable the 
+conversion from object to that particular format.
+
+#### API Documentation
+As, we discussed in the introduction that REST does not have any standard format for the documentation like SOAP. To 
+provide the documentation to consumers; there are standard define as part of OpenAPI specification. Let's integrate
+tooling which will detect the endpoints in our application and provide a basic documentation for it. For this purpose 
+we will use swagger. Let's add the dependencies for Swagger and UI for it and have a look on the same.
+
+We have added below dependencies for the swagger in our `pom.xml`.
+```xml
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-boot-starter</artifactId>
+    <version>${swagger.version}</version>
+</dependency>
+```
+
+We provided that use the OpenAPI specification 3.0 using the application.yaml configuration.
+```yaml
+springfox:
+  documentation:
+    open-api:
+      enabled: true
+```
+Let's start the application and see what we get. After starting the application we can access the API documentation 
+on URL `http://localhost:8080/v3/api-docs` and we can access the swagger UI on URL `http://localhost:8080/swagger-ui`.
+
+Let's see some of below screenshot:
+
+**API Docs URL:**
+![API Docs](images/Open%20API%20Docs.JPG)
+
+**Swagger UI:**
+![Swagger UI](images/Swagger%20UI.JPG)
+
+In this we can see by default some title and other information has been given. Let's provide our custom output and see
+the changes in the API Documentation.
+
+For changing the API documentation title and related properties we need to create bean of Docket and need to pass the 
+`ApiInfo`. Let's see the code for same.
+```java
+package com.codewithnaman.configuration;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.Contact;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+
+import java.util.ArrayList;
+
+@Configuration
+public class TodoApiDefinitionDocumentation {
+
+    public static final Contact CONTACT
+            = new Contact(
+            "Naman Gupta",
+            "http://www.codewithnaman.com",
+            "tech.naman.gupta@gmail.com");
+    public static final ApiInfo API_INFO
+            = new ApiInfo(
+            "ToDo Application Service Documentation",
+            "This Contains the ToDo Application endpoints in the OpenAPI Specification format 3.0",
+            "1.0",
+            "urn:tos",
+            CONTACT,
+            "Apache 2.0",
+            "http://www.apache.org/licenses/LICENSE-2.0",
+            new ArrayList<>());
+
+    @Bean
+    public Docket apiDocket(){
+        return new Docket(DocumentationType.OAS_30).apiInfo(API_INFO).select().build();
+    }
+}
+```
+
+This we just want to expose the api which are exposed by our package then we will do the select on package of Docket.
+What we changed for this is below:
+```java
+   @Bean
+    public Docket apiDocket(){
+        return new Docket(DocumentationType.OAS_30)
+                .apiInfo(API_INFO)
+                .select().apis(RequestHandlerSelectors.basePackage("com.codewithnaman"))
+                .build();
+    }
+```
+
+Let's create the Documentation for our APIs. We are creating one for example on CreateUserTaskController and see how it
+affects our documentation. We have created the documenation in classes 
+[CreateUserTaskController](src/main/java/com/codewithnaman/controller/todo/CreateUserTaskController.java) and 
+[CreateUserTaskRequest](src/main/java/com/codewithnaman/dto/todo/CreateUserTaskRequest.java). After which the screenshot
+of the api-doc is below:
+![Post API DOC](images/Post%20Api%20Doc.JPG)
+
+#### Filtering
+In this section we will talk about filtering of fields in the response from POJO.
+
+##### Static Filtering
+This we have done in our Sample application where we added the @JsonIgnore on property of User tasks and that will be 
+not rendered as the part of response. To see example [Click Here](src/main/java/com/codewithnaman/entity/User.java)
+
+##### Dynamic Filtering
+Dynamic filtering is used when we want to filter the fields depending on the request. Let's for example we don't want
+to include the record metadata when we are fetching all user. Let's modify the method and see it:
+```java
+    @GetMapping("users")
+    public MappingJacksonValue getUser() {
+        log.info("Get All user request received");
+        List<User> users = retrieveUserService.getAllUsers();
+        SimpleBeanPropertyFilter recordMetaDataFilter = SimpleBeanPropertyFilter.serializeAllExcept("metadata");
+        FilterProvider userFieldFilter = new SimpleFilterProvider().addFilter("RecordMetaDataFilter", recordMetaDataFilter);
+        MappingJacksonValue response = new MappingJacksonValue(users);
+        response.setFilters(userFieldFilter);
+        log.info("Found number of Users : {}", users.size());
+        return response;
+    }
+```
+In above method we created a property filter which will serialize everything except metadata, and then we provided the value
+to MappingJacksonValue which will filter the recordmetadata. In addition to this work we need to annotate our User class
+with `@JsonFilter("RecordMetaDataFilter")`, where RecordMetaDataFilter is the id of filter creating in controller method.
+
+#### Versioning
+Let's undestand how we can version our APIs. Just consider we have one API already exist, but we want to expose the 
+endpoint with additional information; How we can do that. Also we need to support existing users of API, Then in this 
+case API versioning helps us. There are 4 ways to do this. We will see each one with example.
+
+**1. URI Versioning :**
+In this we specify the version in the URI itself and mapped to controller methods. For Example 
+[UriTypeVersioningController](src/main/java/com/codewithnaman/controller/versioning/UriTypeVersioningController.java)
+
+Request and response after hitting the URI:
+```text
+###
+GET http://localhost:8080/v1/card-list
+
+[
+  "DEBIT",
+  "CREDIT"
+]
+
+###
+GET http://localhost:8080/v2/card-list
+
+[
+  "DEBIT",
+  "CREDIT",
+  "PRE-PAID"
+]
+```
+
+**2. Parameter Versioning :**
+In this we specify the version in query parameter. Let's see example for this in 
+[ParameterVersioningController](src/main/java/com/codewithnaman/controller/versioning/ParameterVersioningController.java).
+
+Let's hit the request and see:
+```text
+###
+GET http://localhost:8080/card-list?version=1
+
+[
+  "DEBIT",
+  "CREDIT"
+]
+
+###
+GET http://localhost:8080/card-list?version=2
+
+[
+  "DEBIT",
+  "CREDIT",
+  "PRE-PAID"
+]
+```
+
+**3. Custom Header Versioning :** In header versioning we pass the version parameter as part of header in the request.
+Let's see example for this in 
+[HeaderVersioningController](src/main/java/com/codewithnaman/controller/versioning/HeaderVersioningController.java).
+
+Let's hit the request and see:
+```text
+###
+GET http://localhost:8080/card-list
+X-API-VERSION: 1
+
+[
+  "DEBIT",
+  "CREDIT"
+]
+
+###
+GET http://localhost:8080/card-list
+X-API-VERSION: 2
+
+[
+  "DEBIT",
+  "CREDIT",
+  "PRE-PAID"
+]
+```   
+
+**4. Media Type or Accept-Header or MIME Type Versioning :** In this we will pass the version parameter as the 
+accept header the value might be like com.codewithnaman-v1+json and com.codewithnaman-v2+json. Let's see example
+of this in 
+[MimeTypeVersioningController](src/main/java/com/codewithnaman/controller/versioning/MimeTypeVersioningController.java).
+
+Let's hit the request and see the response for this:
+```text
+###
+GET http://localhost:8080/card-list
+Accept: application/vnd.com.codewithnaman-v1+json
+
+[
+  "DEBIT",
+  "CREDIT"
+]
+
+###
+GET http://localhost:8080/card-list
+Accept: application/vnd.com.codewithnaman-v2+json
+X-API-VERSION: 2
+
+[
+  "DEBIT",
+  "CREDIT",
+  "PRE-PAID"
+]
+```
+
+There is no good or bad approach in above versioning schemes. But we need choose our application versioning scheme on
+below parameters:
+
+1. URI Pollution: In header and query param versioning we are adding it to URI; so URI may be longer, and we have URI 
+length limits.
+
+2. Misuse of HTTP header: In Header API version or Accept header; we are using for versioning purpose which is not
+headers for intended to use.
+   
+3. Caching: The versioning in URI and Query Params can be cached to browser; So sometimes it might need to cache clear
+for hitting the URI from application or JS script cache.
+   
+4. GET method hit from browser: URI and Query param can hit the GET method from the browser; while other can't.
+
+5. API Documentation: We need to put them properly in the API documentation for the consumers.
+
+### Richardson Maturity Model
+Richardson introduced a mode to measure how mature an REST API application model is which is known as Richarson Maturity
+Model. There are 4 Levels in this model which tells us the maturity or REST API in our application.
+
+**Level 0 (Swamp of Pox)**
+
+In this we have a service already exposing a resource via its URI using only one HTTP verb (usually GET or POST). 
+In this phase, you only use HTTP as a transport system (think of it as an RPC using HTTP or SOAP).
+
+**Level 1 (Resources)**
+
+In this we expose the resource as URIs where we don't use the proper HTTP methods.
+
+**Level 2 (HTTP Verbs)**
+
+Level 1 + We start using proper HTTP methods with proper HTTP codes.
+
+**Level 3 (Multimedia)**
+
+Level 2 + HATEOAS. In this we start putting related links in the response. 
+
+### Best Practices with REST API
+1. Try to think about from the perspective of Consumer of APIs. Is it Mobile or Web or Data Crawler application. Proper
+documentation of API also helps consumer to understand the API and consume it.
+   
+2. Use Proper HTTP request method and HTTP Response Codes.
+
+3. Use plurals for the resource.
+
+4. Use Noun for the resource; In some cases you have verb but that need to associate with the noun resource; which shows
+what action is going to performed and what resource we are performing.
